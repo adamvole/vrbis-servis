@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sledování Směn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNtZW55IFRheGkiLAogICJzaG9ydF9uYW1lIjogIlNtZW55IiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxZTI5M2IiLAogICJ0aGVtZV9jb2xvciI6ICIxZTI5M2IiCn0=">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-indigo-500">
+
+    <div class="max-w-md mx-auto min-h-screen flex flex-col p-4 pb-8" id="app">
+        <!-- HEADER -->
+        <header class="flex justify-between items-center mb-6 py-2 border-b border-slate-800">
+            <h1 class="text-xl font-bold tracking-tight text-indigo-400">Směnový Asistent</h1>
+            <span id="gps-status" class="text-xs bg-slate-800 px-2 py-1 rounded-full text-slate-400">GPS: Neaktivní</span>
+        </header>
+
+        <!-- OBRAZOVKA 1: NASTAVENÍ SMĚNY -->
+        <div id="view-setup" class="space-y-5 my-auto">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/50 shadow-xl">
+                <h2 class="text-lg font-semibold mb-4 text-slate-200">Nová směna</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Průměrná spotřeba (l/100 km)</label>
+                        <input type="number" id="input-consumption" step="0.1" value="6.5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Cena nafty (Kč/l)</label>
+                        <input type="number" id="input-fuel-price" step="0.1" value="38.5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </div>
+            </div>
+            <button onclick="startShift()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-all text-center block">
+                Začít směnu
+            </button>
+        </div>
+
+        <!-- OBRAZOVKA 2: AKTIVNÍ SMĚNA -->
+        <div id="view-shift" class="hidden space-y-6">
+            <!-- Live stats -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-800">
+                    <span class="block text-xs text-slate-400 uppercase font-medium">Vybráno</span>
+                    <span id="stat-money" class="text-xl font-bold text-emerald-400">0 Kč</span>
+                </div>
+                <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-800">
+                    <span class="block text-xs text-slate-400 uppercase font-medium">Ujeto (GPS)</span>
+                    <span id="stat-km" class="text-xl font-bold text-indigo-400">0.0 km</span>
+                </div>
+                <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-800">
+                    <span class="block text-xs text-slate-400 uppercase font-medium">Jízdy</span>
+                    <span id="stat-rides" class="text-xl font-bold text-slate-200">0</span>
+                </div>
+                <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-800">
+                    <span class="block text-xs text-slate-400 uppercase font-medium">Lidí</span>
+                    <span id="stat-people" class="text-xl font-bold text-slate-200">0</span>
+                </div>
+            </div>
+
+            <!-- Formulář jízdy (zobrazí se, pokud neběží jízda) -->
+            <div id="ride-form" class="bg-slate-800 p-5 rounded-2xl border border-slate-700/50 shadow-xl space-y-4">
+                <h3 class="text-md font-semibold text-indigo-400">Nová jízda</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Počet osob</label>
+                        <input type="number" id="ride-people" value="1" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Cena (Kč)</label>
+                        <input type="number" id="ride-price" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Cílová adresa</label>
+                    <input type="text" id="ride-address" placeholder="Ulice, Město" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                <button onclick="startRide()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl active:scale-[0.98] transition-all">
+                    Spustit jízdu & Otevřít Mapy.cz
+                </button>
+            </div>
+
+            <!-- Stav aktivní jízdy -->
+            <div id="ride-active" class="hidden bg-indigo-950/40 border border-indigo-500/30 p-5 rounded-2xl text-center space-y-4">
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-indigo-400 font-semibold">Aktuálně na cestě do</p>
+                    <p id="active-destination" class="text-lg font-bold text-slate-100 mt-1">-</p>
+                </div>
+                <button onclick="endRide()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl active:scale-[0.98] transition-all">
+                    Lidé vysazeni (Ukončit jízdu)
+                </button>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800">
+                <button onclick="finishShiftPrompt()" class="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 font-semibold py-3 rounded-xl transition-all border border-rose-500/20">
+                    Ukončit celou směnu
+                </button>
+            </div>
+        </div>
+
+        <!-- OBRAZOVKA 3: SHRNUTÍ SMĚNY -->
+        <div id="view-summary" class="hidden space-y-6 my-auto">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/50 shadow-xl space-y-4">
+                <h2 class="text-xl font-bold text-center text-indigo-400 mb-2">Shrnutí směny</h2>
+                
+                <!-- Možnost manuální úpravy KM kvůli limitům iOS na pozadí -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Skutečně najeté KM (lze upravit podle budíku):</label>
+                    <input type="number" id="final-km-input" step="0.1" oninput="recalculateSummary()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-bold focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-400">Celkem přepraveno osob:</span>
+                        <span id="sum-people" class="font-bold text-slate-200">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-400">Celkový počet jízd:</span>
+                        <span id="sum-rides" class="font-bold text-slate-200">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-400">Hrubý příjem (vybráno):</span>
+                        <span id="sum-gross" class="font-bold text-emerald-400">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-400">Náklady na palivo:</span>
+                        <span id="sum-fuel" class="font-bold text-rose-400">-</span>
+                    </div>
+                    <div class="flex justify-between pt-2 text-base">
+                        <span class="font-bold text-slate-200">Čistý zisk:</span>
+                        <span id="sum-net" class="font-extrabold text-emerald-400 text-lg">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="resetApp()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all">
+                Začít novou směnu od nuly
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // STAV APLIKACE
+        let state = {
+            active: false,
+            consumption: 6.5,
+            fuelPrice: 38.5,
+            totalMoney: 0,
+            totalDistance: 0,
+            totalPeople: 0,
+            totalRides: 0,
+            currentRide: null, // { people, price, address }
+            lastLat: null,
+            lastLon: null
+        };
+
+        let watchId = null;
+
+        // Načtení z localStorage při startu
+        if (localStorage.getItem('taxi_shift_state')) {
+            state = JSON.parse(localStorage.getItem('taxi_shift_state'));
+            if (state.active) {
+                initGPS();
+                showView('view-shift');
+                updateShiftUI();
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('taxi_shift_state', JSON.stringify(state));
+        }
+
+        function showView(viewId) {
+            ['view-setup', 'view-shift', 'view-summary'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // GPS SLEDOVÁNÍ VZDÁLENOSTI
+        function initGPS() {
+            if (!navigator.geolocation) {
+                document.getElementById('gps-status').innerText = "GPS: Nepodporováno";
+                return;
+            }
+
+            document.getElementById('gps-status').innerText = "GPS: Vyhledávám...";
+            document.getElementById('gps-status').className = "text-xs bg-amber-500/20 px-2 py-1 rounded-full text-amber-400";
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    document.getElementById('gps-status').innerText = "GPS: Aktivní";
+                    document.getElementById('gps-status').className = "text-xs bg-emerald-500/20 px-2 py-1 rounded-full text-emerald-400";
+                    
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    if (state.lastLat !== null && state.lastLon !== null) {
+                        const dist = calculateDistance(state.lastLat, state.lastLon, lat, lon);
+                        // Filtrace nesmyslných skoků (GPS šum, když stojíš na místě)
+                        if (dist > 0.02 && position.coords.accuracy < 30) {
+                            state.totalDistance += dist;
+                            updateShiftUI();
+                            saveState();
+                        }
+                    }
+                    state.lastLat = lat;
+                    state.lastLon = lon;
+                },
+                (error) => {
+                    console.error(error);
+                    document.getElementById('gps-status').innerText = "GPS: Chyba signálu";
+                    document.getElementById('gps-status').className = "text-xs bg-rose-500/20 px-2 py-1 rounded-full text-rose-400";
+                },
+                { enableHighAccuracy: true, distanceFilter: 10 }
+            );
+        }
+
+        // Výpočet vzdálenosti (Haversine formula v km)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // AKCE
+        function startShift() {
+            state.active = true;
+            state.consumption = parseFloat(document.getElementById('input-consumption').value) || 6.5;
+            state.fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 38.5;
+            state.totalMoney = 0;
+            state.totalDistance = 0;
+            state.totalPeople = 0;
+            state.totalRides = 0;
+            state.currentRide = null;
+            state.lastLat = null;
+            state.lastLon = null;
+
+            initGPS();
+            saveState();
+            updateShiftUI();
+            showView('view-shift');
+        }
+
+        function updateShiftUI() {
+            document.getElementById('stat-money').innerText = `${state.totalMoney} Kč`;
+            document.getElementById('stat-km').innerText = `${state.totalDistance.toFixed(1)} km`;
+            document.getElementById('stat-rides').innerText = state.totalRides;
+            document.getElementById('stat-people').innerText = state.totalPeople;
+
+            if (state.currentRide) {
+                document.getElementById('ride-form').classList.add('hidden');
+                document.getElementById('ride-active').classList.remove('hidden');
+                document.getElementById('active-destination').innerText = state.currentRide.address;
+            } else {
+                document.getElementById('ride-form').classList.remove('hidden');
+                document.getElementById('ride-active').classList.add('hidden');
+                // Vyčistit inputy pro další jízdu
+                document.getElementById('ride-address').value = '';
+                document.getElementById('ride-price').value = '';
+            }
+        }
+
+        function startRide() {
+            const people = parseInt(document.getElementById('ride-people').value) || 1;
+            const price = parseFloat(document.getElementById('ride-price').value) || 0;
+            const address = document.getElementById('ride-address').value.trim();
+
+            if (!address) {
+                alert('Zadej prosím adresu cíle.');
+                return;
+            }
+
+            state.currentRide = { people, price, address };
+            saveState();
+            updateShiftUI();
+
+            // Hluboký odkaz na aplikaci Mapy.cz (pokud je v iOS nainstalovaná, otevře se přímo aplikace, jinak web)
+            const mapyUrl = `https://mapy.cz/zakladni?q=${encodeURIComponent(address)}`;
+            window.location.href = mapyUrl;
+        }
+
+        function endRide() {
+            if (state.currentRide) {
+                state.totalMoney += state.currentRide.price;
+                state.totalPeople += state.currentRide.people;
+                state.totalRides += 1;
+                state.currentRide = null;
+                saveState();
+                updateShiftUI();
+            }
+        }
+
+        function finishShiftPrompt() {
+            if (state.currentRide) {
+                if (!confirm('Máš aktivní jízdu. Chceš přesto ukončit směnu? (Tato jízda se nezapočítá)')) return;
+            }
+            
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            document.getElementById('gps-status').innerText = "GPS: Neaktivní";
+            document.getElementById('gps-status').className = "text-xs bg-slate-800 px-2 py-1 rounded-full text-slate-400";
+
+            document.getElementById('final-km-input').value = state.totalDistance.toFixed(1);
+            recalculateSummary();
+            showView('view-summary');
+        }
+
+        function recalculateSummary() {
+            const finalKm = parseFloat(document.getElementById('final-km-input').value) || 0;
+            
+            // Výpočet paliva: (km / 100) * spotřeba * cena za litr
+            const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
+            const netProfit = state.totalMoney - fuelCost;
+
+            document.getElementById('sum-people').innerText = state.totalPeople;
+            document.getElementById('sum-rides').innerText = state.totalRides;
+            document.getElementById('sum-gross').innerText = `${state.totalMoney} Kč`;
+            document.getElementById('sum-fuel').innerText = `${Math.round(fuelCost)} Kč`;
+            document.getElementById('sum-net').innerText = `${Math.round(netProfit)} Kč`;
+        }
+
+        function resetApp() {
+            localStorage.removeItem('taxi_shift_state');
+            state.active = false;
+            showView('view-setup');
+        }
+    </script>
+</body>
+</html>
