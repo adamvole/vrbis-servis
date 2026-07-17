@@ -1,565 +1,611 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vrbis Servis - Směny</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'media'
-        }
-    </script>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlZyYmlzIFNlcnZpcyIsCiAgInNob3J0X25hbWUiOiAiVnJiaXMiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y4ZmFmYyIsCiAgInRoZW1lX2Nvb3IiOiAiIzAwN2JmZiIKfQ==">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vrbis Servis - Směny</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'media'
+    }
+  </script>
+  <link rel="manifest"
+    href="data:application/json;base64,ewogICJuYW1lIjogIlZyYmlzIFNlcnZpcyIsCiAgInNob3J0X25hbWUiOiAiVnJiaXMiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y4ZmFmYyIsCiAgInRoZW1lX2Nvb3IiOiAiIzAwN2JmZiIKfQ==">
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased transition-colors duration-200 overflow-x-hidden">
 
-    <!-- HISTORIE: BOČNÍ VYJÍŽDĚCÍ MENU (DRAWER) -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300 opacity-0" onclick="toggleSidebar(false)"></div>
-    <div id="history-sidebar" class="fixed top-0 right-0 h-full w-80 bg-white dark:bg-slate-900 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 p-5 flex flex-col border-l border-slate-200 dark:border-slate-800">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
-            <h3 class="font-extrabold text-lg text-slate-950 dark:text-white uppercase tracking-wide">Historie směn</h3>
-            <button onclick="toggleSidebar(false)" class="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold">✕</button>
-        </div>
-        <!-- Seznam směn -->
-        <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
-            <!-- Sem se dynamicky vkládají směny -->
-        </div>
-        <button onclick="clearHistory()" class="mt-4 w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-full text-xs border border-rose-200 dark:border-rose-900/30 transition-all">
-            Smazat celou historii
-        </button>
+<body
+  class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased transition-colors duration-200 overflow-x-hidden">
+
+  <!-- HISTORIE: BOČNÍ VYJÍŽDĚCÍ MENU (DRAWER) -->
+  <div id="sidebar-overlay"
+    class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300 opacity-0"
+    onclick="toggleSidebar(false)"></div>
+  <div id="history-sidebar"
+    class="fixed top-0 right-0 h-full w-80 bg-white dark:bg-slate-900 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 p-5 flex flex-col border-l border-slate-200 dark:border-slate-800">
+    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+      <h3 class="font-extrabold text-lg text-slate-950 dark:text-white uppercase tracking-wide">Historie směn</h3>
+      <button onclick="toggleSidebar(false)"
+        class="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold">✕</button>
+    </div>
+    <!-- Seznam směn -->
+    <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+      <!-- Sem se dynamicky vkládají směny -->
+    </div>
+    <button onclick="clearHistory()"
+      class="mt-4 w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-full text-xs border border-rose-200 dark:border-rose-900/30 transition-all">
+      Smazat celou historii
+    </button>
+  </div>
+
+  <!-- HLAVNÍ KONTEJNER APLIKACE -->
+  <div class="max-w-md mx-auto min-h-screen flex flex-col p-4 pb-8 relative" id="app">
+
+    <!-- TLAČÍTKO PRO HISTORII V ROŽKU -->
+    <div class="absolute top-4 right-4 z-30">
+      <button onclick="toggleSidebar(true)"
+        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+          class="w-5 h-5 text-[#007bff]">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
+        </svg>
+      </button>
     </div>
 
-    <!-- HLAVNÍ KONTEJNER APLIKACE -->
-    <div class="max-w-md mx-auto min-h-screen flex flex-col p-4 pb-8 relative" id="app">
-        
-        <!-- TLAČÍTKO PRO HISTORII V ROŽKU -->
-        <div class="absolute top-4 right-4 z-30">
-            <button onclick="toggleSidebar(true)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-[#007bff]">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
-                </svg>
-            </button>
+    <!-- HEADER -->
+    <header class="text-center my-6 space-y-1 pt-2">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Vrbis Servis</h1>
+      <p class="text-xs text-slate-500 dark:text-slate-400 font-medium px-8">Spolehlivá přeprava osob a zásilek po
+        Studenci a okolí 0.2</p>
+      <div class="pt-2 flex justify-center">
+        <span id="gps-status"
+          class="text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-900 dark:text-slate-400 px-2.5 py-1 rounded-full transition-colors">
+          GPS: Neaktivní
+        </span>
+      </div>
+    </header>
+
+    <!-- OBRAZOVKA 1: NASTAVENÍ SMĚNY -->
+    <div id="view-setup" class="space-y-5 my-auto">
+      <div
+        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <h2
+          class="text-lg font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">
+          Nová směna</h2>
+        <div class="space-y-4">
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Průměrná
+              spotřeba (l/100 km)</label>
+            <input type="number" id="input-consumption" step="0.1" value="6.5"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-colors">
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Cena
+              nafty (Kč/l)</label>
+            <input type="number" id="input-fuel-price" step="0.1" value="38.5"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-colors">
+          </div>
+        </div>
+      </div>
+      <button onclick="startShift()"
+        class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-full shadow-md shadow-blue-500/10 active:scale-[0.99] transition-all text-center block">
+        Začít směnu
+      </button>
+    </div>
+
+    <!-- OBRAZOVKA 2: AKTIVNÍ SMĚNA -->
+    <div id="view-shift" class="hidden space-y-5">
+
+      <!-- Živé Statistiky -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span
+            class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Vybráno</span>
+          <span id="stat-money" class="text-xl font-black text-emerald-600 dark:text-emerald-400">0 Kč</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Ujeto
+            (GPS)</span>
+          <span id="stat-km" class="text-xl font-black text-[#007bff]">0.0 km</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Jízdy</span>
+          <span id="stat-rides" class="text-xl font-black text-slate-700 dark:text-slate-300">0</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Lidí</span>
+          <span id="stat-people" class="text-xl font-black text-slate-700 dark:text-slate-300">0</span>
+        </div>
+      </div>
+
+      <!-- TLAČÍTKO PAUZY -->
+      <button onclick="togglePause()" id="btn-pause"
+        class="w-full font-bold py-3 rounded-full shadow-sm transition-all text-sm flex items-center justify-center gap-2">
+        <!-- Dynamic Content via JS -->
+      </button>
+
+      <!-- LIVE ÚPRAVA SPOTŘEBY ZA JÍZDY -->
+      <div id="live-params-box"
+        class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+        <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Aktuální
+          parametry vozidla</span>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Spotřeba</label>
+            <input type="number" id="live-consumption" step="0.1" oninput="syncLiveParams()"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Cena nafty</label>
+            <input type="number" id="live-fuel-price" step="0.1" oninput="syncLiveParams()"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulář jízdy -->
+      <div id="ride-form"
+        class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <h3 class="text-md font-bold text-[#007bff] uppercase tracking-wide">Nová jízda</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Počet
+              osob</label>
+            <!-- Přidán inputmode="numeric" a pattern="[0-9]*" pro maximální kompatibilitu -->
+            <input type="number" id="ride-people" value="1" min="1" inputmode="numeric" pattern="[0-9]*"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Cena celkem
+              (Kč)</label>
+            <!-- Pokud u ceny stačí celá čísla, nech "numeric". Pokud chceš haléře/desetinná místa, změň na inputmode="decimal" -->
+            <input type="number" id="ride-price" placeholder="0" inputmode="numeric"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Cílová
+              adresa</label>
+            <input type="text" id="ride-address" placeholder="Ulice, Město"
+              class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
+          </div>
+          <button onclick="startRide()"
+            class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-3.5 rounded-full shadow-md active:scale-[0.99] transition-all">
+            Spustit jízdu & Otevřít Mapy.cz
+          </button>
         </div>
 
-        <!-- HEADER -->
-        <header class="text-center my-6 space-y-1 pt-2">
-            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Vrbis Servis</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium px-8">Spolehlivá přeprava osob a zásilek po Studenci a okolí</p>
-            <div class="pt-2 flex justify-center">
-                <span id="gps-status" class="text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-900 dark:text-slate-400 px-2.5 py-1 rounded-full transition-colors">
-                    GPS: Neaktivní
-                </span>
-            </div>
-        </header>
-
-        <!-- OBRAZOVKA 1: NASTAVENÍ SMĚNY -->
-        <div id="view-setup" class="space-y-5 my-auto">
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">Nová směna</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Průměrná spotřeba (l/100 km)</label>
-                        <input type="number" id="input-consumption" step="0.1" value="6.5" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-colors">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Cena nafty (Kč/l)</label>
-                        <input type="number" id="input-fuel-price" step="0.1" value="38.5" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-colors">
-                    </div>
-                </div>
-            </div>
-            <button onclick="startShift()" class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-full shadow-md shadow-blue-500/10 active:scale-[0.99] transition-all text-center block">
-                Začít směnu
-            </button>
+        <!-- Stav aktivní jízdy -->
+        <div id="ride-active"
+          class="hidden bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 p-5 rounded-2xl text-center space-y-4">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-[#007bff] font-bold">Aktuálně na cestě do</p>
+            <p id="active-destination" class="text-lg font-bold text-slate-900 dark:text-white mt-1">-</p>
+          </div>
+          <button onclick="endRide()"
+            class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-full active:scale-[0.99] transition-all shadow-sm">
+            Lidé vysazeni (Ukončit jízdu)
+          </button>
         </div>
 
-        <!-- OBRAZOVKA 2: AKTIVNÍ SMĚNA -->
-        <div id="view-shift" class="hidden space-y-5">
-            
-            <!-- Živé Statistiky -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Vybráno</span>
-                    <span id="stat-money" class="text-xl font-black text-emerald-600 dark:text-emerald-400">0 Kč</span>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Ujeto (GPS)</span>
-                    <span id="stat-km" class="text-xl font-black text-[#007bff]">0.0 km</span>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Jízdy</span>
-                    <span id="stat-rides" class="text-xl font-black text-slate-700 dark:text-slate-300">0</span>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="block text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Lidí</span>
-                    <span id="stat-people" class="text-xl font-black text-slate-700 dark:text-slate-300">0</span>
-                </div>
-            </div>
+        <div class="pt-2">
+          <button onclick="finishShiftPrompt()"
+            class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold py-3.5 rounded-full transition-all border border-rose-200 dark:border-rose-900/30 text-sm">
+            Ukončit celou směnu
+          </button>
+        </div>
+      </div>
 
-            <!-- TLAČÍTKO PAUZY -->
-            <button onclick="togglePause()" id="btn-pause" class="w-full font-bold py-3 rounded-full shadow-sm transition-all text-sm flex items-center justify-center gap-2">
-                <!-- Dynamic Content via JS -->
-            </button>
+      <!-- OBRAZOVKA 3: SHRNUTÍ SMĚNY -->
+      <div id="view-summary" class="hidden space-y-5 my-auto">
+        <div
+          class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <h2 class="text-xl font-black text-center text-[#007bff] uppercase tracking-wide mb-2">Shrnutí směny</h2>
 
-            <!-- LIVE ÚPRAVA SPOTŘEBY ZA JÍZDY -->
-            <div id="live-params-box" class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-                <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Aktuální parametry vozidla</span>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Spotřeba</label>
-                        <input type="number" id="live-consumption" step="0.1" oninput="syncLiveParams()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Cena nafty</label>
-                        <input type="number" id="live-fuel-price" step="0.1" oninput="syncLiveParams()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
-            </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 mb-4">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Skutečně najeté KM (lze
+              upravit dle tachometru):</label>
+            <input type="number" id="final-km-input" step="0.1" oninput="recalculateSummary()"
+              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
+          </div>
 
-            <!-- Formulář jízdy -->
-            <div id="ride-form" class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h3 class="text-md font-bold text-[#007bff] uppercase tracking-wide">Nová jízda</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Počet osob</label>
-                        <input type="number" id="ride-people" value="1" min="1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Cena celkem (Kč)</label>
-                        <input type="number" id="ride-price" placeholder="0" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Cílová adresa</label>
-                    <input type="text" id="ride-address" placeholder="Ulice, Město" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500">
-                </div>
-                <button onclick="startRide()" class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-3.5 rounded-full shadow-md active:scale-[0.99] transition-all">
-                    Spustit jízdu & Otevřít Mapy.cz
-                </button>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <span class="text-slate-500 dark:text-slate-400">Celkem přepraveno osob:</span>
+              <span id="sum-people" class="font-bold text-slate-800 dark:text-slate-200">-</span>
             </div>
-
-            <!-- Stav aktivní jízdy -->
-            <div id="ride-active" class="hidden bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 p-5 rounded-2xl text-center space-y-4">
-                <div>
-                    <p class="text-xs uppercase tracking-wider text-[#007bff] font-bold">Aktuálně na cestě do</p>
-                    <p id="active-destination" class="text-lg font-bold text-slate-900 dark:text-white mt-1">-</p>
-                </div>
-                <button onclick="endRide()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-full active:scale-[0.99] transition-all shadow-sm">
-                    Lidé vysazeni (Ukončit jízdu)
-                </button>
+            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <span class="text-slate-500 dark:text-slate-400">Celkový počet jízd:</span>
+              <span id="sum-rides" class="font-bold text-slate-800 dark:text-slate-200">-</span>
             </div>
-
-            <div class="pt-2">
-                <button onclick="finishShiftPrompt()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold py-3.5 rounded-full transition-all border border-rose-200 dark:border-rose-900/30 text-sm">
-                    Ukončit celou směnu
-                </button>
+            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <span class="text-slate-500 dark:text-slate-400">Hrubý příjem (vybráno):</span>
+              <span id="sum-gross" class="font-bold text-emerald-600 dark:text-emerald-400">-</span>
             </div>
+            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <span class="text-slate-500 dark:text-slate-400">Náklady na palivo:</span>
+              <span id="sum-fuel" class="font-bold text-rose-500 dark:text-rose-400">-</span>
+            </div>
+            <div class="flex justify-between pt-2 text-base">
+              <span class="font-bold text-slate-900 dark:text-white">Čistý zisk:</span>
+              <span id="sum-net" class="font-black text-emerald-600 dark:text-emerald-400 text-xl">-</span>
+            </div>
+          </div>
         </div>
 
-        <!-- OBRAZOVKA 3: SHRNUTÍ SMĚNY -->
-        <div id="view-summary" class="hidden space-y-5 my-auto">
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h2 class="text-xl font-black text-center text-[#007bff] uppercase tracking-wide mb-2">Shrnutí směny</h2>
-                
-                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 mb-4">
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Skutečně najeté KM (lze upravit dle tachometru):</label>
-                    <input type="number" id="final-km-input" step="0.1" oninput="recalculateSummary()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-blue-500">
-                </div>
-
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <span class="text-slate-500 dark:text-slate-400">Celkem přepraveno osob:</span>
-                        <span id="sum-people" class="font-bold text-slate-800 dark:text-slate-200">-</span>
-                    </div>
-                    <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <span class="text-slate-500 dark:text-slate-400">Celkový počet jízd:</span>
-                        <span id="sum-rides" class="font-bold text-slate-800 dark:text-slate-200">-</span>
-                    </div>
-                    <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <span class="text-slate-500 dark:text-slate-400">Hrubý příjem (vybráno):</span>
-                        <span id="sum-gross" class="font-bold text-emerald-600 dark:text-emerald-400">-</span>
-                    </div>
-                    <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <span class="text-slate-500 dark:text-slate-400">Náklady na palivo:</span>
-                        <span id="sum-fuel" class="font-bold text-rose-500 dark:text-rose-400">-</span>
-                    </div>
-                    <div class="flex justify-between pt-2 text-base">
-                        <span class="font-bold text-slate-900 dark:text-white">Čistý zisk:</span>
-                        <span id="sum-net" class="font-black text-emerald-600 dark:text-emerald-400 text-xl">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <button onclick="commitShiftToHistoryAndReset()" class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-4 rounded-full transition-all shadow-md">
-                Uložit směnu a začít novou
-            </button>
-        </div>
+        <button onclick="commitShiftToHistoryAndReset()"
+          class="w-full bg-[#007bff] hover:bg-blue-600 text-white font-bold py-4 rounded-full transition-all shadow-md">
+          Uložit směnu a začít novou
+        </button>
+      </div>
     </div>
 
     <script>
-        let state = {
-            active: false,
-            isPaused: false,
-            consumption: 6.5,
-            fuelPrice: 38.5,
-            totalMoney: 0,
-            totalDistance: 0,
-            totalPeople: 0,
-            totalRides: 0,
-            currentRide: null,
-            lastLat: null,
-            lastLon: null,
-            lastTimestamp: null
-        };
+      let state = {
+        active: false,
+        isPaused: false,
+        consumption: 6.5,
+        fuelPrice: 38.5,
+        totalMoney: 0,
+        totalDistance: 0,
+        totalPeople: 0,
+        totalRides: 0,
+        currentRide: null,
+        lastLat: null,
+        lastLon: null,
+        lastTimestamp: null
+      };
 
-        let watchId = null;
-        let wakeLock = null;
+      let watchId = null;
+      let wakeLock = null;
 
-        // Načtení stavu z localStorage při startu
-        if (localStorage.getItem('taxi_shift_state')) {
-            state = JSON.parse(localStorage.getItem('taxi_shift_state'));
-            document.getElementById('input-consumption').value = state.consumption;
-            document.getElementById('input-fuel-price').value = state.fuelPrice;
-            document.getElementById('live-consumption').value = state.consumption;
-            document.getElementById('live-fuel-price').value = state.fuelPrice;
-            
-            if (state.active) {
-                // Vyčištění mezipaměti polohy po tvrdém restartu/načtení, aby nevznikl obří skok z minula
-                state.lastLat = null;
-                state.lastLon = null;
-                state.lastTimestamp = null;
-                if (!state.isPaused) {
-                    initGPS();
-                    requestWakeLock();
-                }
-                showView('view-shift');
-                updateShiftUI();
-            }
-        }
+      // Načtení stavu z localStorage při startu
+      if (localStorage.getItem('taxi_shift_state')) {
+        state = JSON.parse(localStorage.getItem('taxi_shift_state'));
+        document.getElementById('input-consumption').value = state.consumption;
+        document.getElementById('input-fuel-price').value = state.fuelPrice;
+        document.getElementById('live-consumption').value = state.consumption;
+        document.getElementById('live-fuel-price').value = state.fuelPrice;
 
-        function saveState() {
-            localStorage.setItem('taxi_shift_state', JSON.stringify(state));
-        }
-
-        function syncLiveParams() {
-            state.consumption = parseFloat(document.getElementById('live-consumption').value) || 6.5;
-            state.fuelPrice = parseFloat(document.getElementById('live-fuel-price').value) || 38.5;
-            document.getElementById('input-consumption').value = state.consumption;
-            document.getElementById('input-fuel-price').value = state.fuelPrice;
-            saveState();
-        }
-
-        function showView(viewId) {
-            ['view-setup', 'view-shift', 'view-summary'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById(viewId).classList.remove('hidden');
-        }
-
-        // SCREEN WAKE LOCK (Zabrání zhasnutí displeje na iOS)
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                } catch (err) {
-                    console.warn('Wake Lock nebyl schválen:', err);
-                }
-            }
-        }
-
-        function releaseWakeLock() {
-            if (wakeLock) {
-                wakeLock.release().then(() => { wakeLock = null; });
-            }
-        }
-
-        // Opětovné vyžádání zámku obrazovky při návratu do Safari z pozadí
-        document.addEventListener('visibilitychange', async () => {
-            if (state.active && !state.isPaused && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
-        });
-
-        // GPS SLEDOVÁNÍ (Zpřesněná verze)
-        function initGPS() {
-            if (state.isPaused) return;
-            if (!navigator.geolocation) {
-                document.getElementById('gps-status').innerText = "GPS: Nepodporováno";
-                return;
-            }
-
-            document.getElementById('gps-status').innerText = "GPS: Vyhledávám...";
-            document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-2.5 py-1 rounded-full";
-
-            // Vyčistíme staré body před novým sledováním
-            state.lastLat = null;
-            state.lastLon = null;
-            state.lastTimestamp = null;
-
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    if (state.isPaused) return;
-                    document.getElementById('gps-status').innerText = "GPS: Aktivní";
-                    document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 px-2.5 py-1 rounded-full";
-                    
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    const currentTimestamp = position.timestamp || Date.now();
-
-                    if (state.lastLat !== null && state.lastLon !== null && state.lastTimestamp !== null) {
-                        const dist = calculateDistance(state.lastLat, state.lastLon, lat, lon);
-                        const timeDiffSeconds = (currentTimestamp - state.lastTimestamp) / 1000;
-                        
-                        // Výpočet reálné rychlosti mezi dvěma body v km/h
-                        const speedKmH = timeDiffSeconds > 0 ? (dist / (timeDiffSeconds / 3600)) : 0;
-
-                        // UPRAVENÝ FILTR:
-                        // 1. Musí jít o pohyb (více než 10 metrů)
-                        // 2. Přesnost musí být do 60 metrů (aby to nevypadávalo pod stromy)
-                        // 3. Rychlost nesmí překročit 160 km/h (ochrana proti GPS odskokům/glitchům)
-                        if (dist > 0.01 && accuracy < 60 && speedKmH < 160) {
-                            state.totalDistance += dist;
-                            state.lastLat = lat;
-                            state.lastLon = lon;
-                            state.lastTimestamp = currentTimestamp;
-                            updateShiftUI();
-                            saveState();
-                        } else if (accuracy < 30) {
-                            // Pokud auto stojí, nebo došlo k divnému rychlostnímu skoku, ale přesnost je dobrá,
-                            // posuneme pouze záchytný bod bez přičítání km, aby se filtr resetoval.
-                            state.lastLat = lat;
-                            state.lastLon = lon;
-                            state.lastTimestamp = currentTimestamp;
-                            saveState();
-                        }
-                    } else {
-                        // První záchytný bod směny / jízdy
-                        state.lastLat = lat;
-                        state.lastLon = lon;
-                        state.lastTimestamp = currentTimestamp;
-                        saveState();
-                    }
-                },
-                (error) => {
-                    if (!state.isPaused) {
-                        document.getElementById('gps-status').innerText = "GPS: Bez signálu";
-                        document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 px-2.5 py-1 rounded-full";
-                    }
-                },
-                { 
-                    enableHighAccuracy: true, 
-                    maximumAge: 0, // Vynutí vždy čerstvá data ze satelitu, žádnou cache
-                    timeout: 10000 
-                }
-            );
-        }
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        // AKCE SMĚNY
-        function startShift() {
-            state.active = true;
-            state.isPaused = false;
-            state.consumption = parseFloat(document.getElementById('input-consumption').value) || 6.5;
-            state.fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 38.5;
-            state.totalMoney = 0;
-            state.totalDistance = 0;
-            state.totalPeople = 0;
-            state.totalRides = 0;
-            state.currentRide = null;
-
-            document.getElementById('live-consumption').value = state.consumption;
-            document.getElementById('live-fuel-price').value = state.fuelPrice;
-
+        if (state.active) {
+          // Vyčištění mezipaměti polohy po tvrdém restartu/načtení, aby nevznikl obří skok z minula
+          state.lastLat = null;
+          state.lastLon = null;
+          state.lastTimestamp = null;
+          if (!state.isPaused) {
             initGPS();
             requestWakeLock();
-            saveState();
-            updateShiftUI();
-            showView('view-shift');
+          }
+          showView('view-shift');
+          updateShiftUI();
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem('taxi_shift_state', JSON.stringify(state));
+      }
+
+      function syncLiveParams() {
+        state.consumption = parseFloat(document.getElementById('live-consumption').value) || 6.5;
+        state.fuelPrice = parseFloat(document.getElementById('live-fuel-price').value) || 38.5;
+        document.getElementById('input-consumption').value = state.consumption;
+        document.getElementById('input-fuel-price').value = state.fuelPrice;
+        saveState();
+      }
+
+      function showView(viewId) {
+        ['view-setup', 'view-shift', 'view-summary'].forEach(id => {
+          document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(viewId).classList.remove('hidden');
+      }
+
+      // SCREEN WAKE LOCK (Zabrání zhasnutí displeje na iOS)
+      async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+          try {
+            wakeLock = await navigator.wakeLock.request('screen');
+          } catch (err) {
+            console.warn('Wake Lock nebyl schválen:', err);
+          }
+        }
+      }
+
+      function releaseWakeLock() {
+        if (wakeLock) {
+          wakeLock.release().then(() => { wakeLock = null; });
+        }
+      }
+
+      // Opětovné vyžádání zámku obrazovky při návratu do Safari z pozadí
+      document.addEventListener('visibilitychange', async () => {
+        if (state.active && !state.isPaused && document.visibilityState === 'visible') {
+          await requestWakeLock();
+        }
+      });
+
+      // GPS SLEDOVÁNÍ (Zpřesněná verze)
+      function initGPS() {
+        if (state.isPaused) return;
+        if (!navigator.geolocation) {
+          document.getElementById('gps-status').innerText = "GPS: Nepodporováno";
+          return;
         }
 
-        function togglePause() {
-            state.isPaused = !state.isPaused;
-            
-            if (state.isPaused) {
-                if (watchId) {
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                }
-                releaseWakeLock();
-                document.getElementById('gps-status').innerText = "GPS: Pauza (Neaktivní)";
-                document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-500 text-white px-2.5 py-1 rounded-full";
-            } else {
-                initGPS();
-                requestWakeLock();
-            }
-            
-            saveState();
-            updateShiftUI();
-        }
+        document.getElementById('gps-status').innerText = "GPS: Vyhledávám...";
+        document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-2.5 py-1 rounded-full";
 
-        function updateShiftUI() {
-            document.getElementById('stat-money').innerText = `${state.totalMoney} Kč`;
-            document.getElementById('stat-km').innerText = `${state.totalDistance.toFixed(1)} km`;
-            document.getElementById('stat-rides').innerText = state.totalRides;
-            document.getElementById('stat-people').innerText = state.totalPeople;
+        // Vyčistíme staré body před novým sledováním
+        state.lastLat = null;
+        state.lastLon = null;
+        state.lastTimestamp = null;
 
-            const btnPause = document.getElementById('btn-pause');
-            const rideForm = document.getElementById('ride-form');
-            const liveParamsBox = document.getElementById('live-params-box');
-
-            if (state.isPaused) {
-                btnPause.className = "w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-full shadow-md transition-all text-sm flex items-center justify-center gap-2";
-                btnPause.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg> Obnovit směnu (Konec pauzy)`;
-                rideForm.classList.add('hidden');
-                liveParamsBox.classList.add('hidden');
-            } else {
-                btnPause.className = "w-full bg-slate-200 dark:bg-slate-900 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-full shadow-sm transition-all text-sm flex items-center justify-center gap-2";
-                btnPause.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg> Pozastavit směnu (Pauza)`;
-                if (!state.currentRide) {
-                    rideForm.classList.remove('hidden');
-                    liveParamsBox.classList.remove('hidden');
-                }
-            }
-
-            if (state.currentRide) {
-                rideForm.classList.add('hidden');
-                document.getElementById('ride-active').classList.remove('hidden');
-                document.getElementById('active-destination').innerText = state.currentRide.address;
-                btnPause.classList.add('hidden');
-            } else {
-                if (!state.isPaused) {
-                    rideForm.classList.remove('hidden');
-                }
-                document.getElementById('ride-active').classList.add('hidden');
-                document.getElementById('ride-address').value = '';
-                document.getElementById('ride-price').value = '';
-                if (!state.isPaused) btnPause.classList.remove('hidden');
-            }
-        }
-
-        // JÍZDY
-        function startRide() {
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
             if (state.isPaused) return;
-            const people = parseInt(document.getElementById('ride-people').value) || 1;
-            const price = parseFloat(document.getElementById('ride-price').value) || 0;
-            const address = document.getElementById('ride-address').value.trim();
+            document.getElementById('gps-status').innerText = "GPS: Aktivní";
+            document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 px-2.5 py-1 rounded-full";
 
-            if (!address) {
-                alert('Zadej adresu cíle.');
-                return;
-            }
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const currentTimestamp = position.timestamp || Date.now();
 
-            state.currentRide = { people, price, address };
-            saveState();
-            updateShiftUI();
+            if (state.lastLat !== null && state.lastLon !== null && state.lastTimestamp !== null) {
+              const dist = calculateDistance(state.lastLat, state.lastLon, lat, lon);
+              const timeDiffSeconds = (currentTimestamp - state.lastTimestamp) / 1000;
 
-            window.location.href = `https://mapy.cz/zakladni?q=${encodeURIComponent(address)}`;
-        }
+              // Výpočet reálné rychlosti mezi dvěma body v km/h
+              const speedKmH = timeDiffSeconds > 0 ? (dist / (timeDiffSeconds / 3600)) : 0;
 
-        function endRide() {
-            if (state.currentRide) {
-                state.totalMoney += state.currentRide.price;
-                state.totalPeople += state.currentRide.people;
-                state.totalRides += 1;
-                state.currentRide = null;
-                saveState();
+              // UPRAVENÝ FILTR:
+              // 1. Musí jít o pohyb (více než 10 metrů)
+              // 2. Přesnost musí být do 60 metrů (aby to nevypadávalo pod stromy)
+              // 3. Rychlost nesmí překročit 160 km/h (ochrana proti GPS odskokům/glitchům)
+              if (dist > 0.01 && accuracy < 60 && speedKmH < 160) {
+                state.totalDistance += dist;
+                state.lastLat = lat;
+                state.lastLon = lon;
+                state.lastTimestamp = currentTimestamp;
                 updateShiftUI();
-            }
-        }
-
-        function finishShiftPrompt() {
-            if (state.currentRide && !confirm('Máš aktivní jízdu. Opravdu ukončit směnu?')) return;
-            
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            releaseWakeLock();
-            
-            document.getElementById('gps-status').innerText = "GPS: Neaktivní";
-            document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-900 dark:text-slate-400 px-2.5 py-1 rounded-full";
-
-            document.getElementById('final-km-input').value = state.totalDistance.toFixed(1);
-            recalculateSummary();
-            showView('view-summary');
-        }
-
-        function recalculateSummary() {
-            const finalKm = parseFloat(document.getElementById('final-km-input').value) || 0;
-            const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
-            const netProfit = state.totalMoney - fuelCost;
-
-            document.getElementById('sum-people').innerText = state.totalPeople;
-            document.getElementById('sum-rides').innerText = state.totalRides;
-            document.getElementById('sum-gross').innerText = `${state.totalMoney} Kč`;
-            document.getElementById('sum-fuel').innerText = `${Math.round(fuelCost)} Kč`;
-            document.getElementById('sum-net').innerText = `${Math.round(netProfit)} Kč`;
-        }
-
-        // UKLÁDÁNÍ DO HISTORIE A RESET
-        function commitShiftToHistoryAndReset() {
-            const finalKm = parseFloat(document.getElementById('final-km-input').value) || 0;
-            const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
-            const netProfit = state.totalMoney - fuelCost;
-
-            const historyItem = {
-                date: new Date().toLocaleDateString('cs-CZ'),
-                time: new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'}),
-                people: state.totalPeople,
-                rides: state.totalRides,
-                km: finalKm.toFixed(1),
-                gross: state.totalMoney,
-                fuel: Math.round(fuelCost),
-                net: Math.round(netProfit)
-            };
-
-            let history = JSON.parse(localStorage.getItem('vrbis_history')) || [];
-            history.unshift(historyItem);
-            localStorage.setItem('vrbis_history', JSON.stringify(history));
-
-            localStorage.removeItem('taxi_shift_state');
-            state.active = false;
-            state.isPaused = false;
-            showView('view-setup');
-        }
-
-        // LOGIKA BOČNÍHO MENU
-        function toggleSidebar(open) {
-            const sidebar = document.getElementById('history-sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            
-            if (open) {
-                renderHistory();
-                overlay.classList.remove('hidden');
-                setTimeout(() => {
-                    overlay.classList.add('opacity-100');
-                    sidebar.classList.remove('translate-x-full');
-                }, 10);
+                saveState();
+              } else if (accuracy < 30) {
+                // Pokud auto stojí, nebo došlo k divnému rychlostnímu skoku, ale přesnost je dobrá,
+                // posuneme pouze záchytný bod bez přičítání km, aby se filtr resetoval.
+                state.lastLat = lat;
+                state.lastLon = lon;
+                state.lastTimestamp = currentTimestamp;
+                saveState();
+              }
             } else {
-                sidebar.classList.add('translate-x-full');
-                overlay.classList.remove('opacity-100');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
+              // První záchytný bod směny / jízdy
+              state.lastLat = lat;
+              state.lastLon = lon;
+              state.lastTimestamp = currentTimestamp;
+              saveState();
             }
+          },
+          (error) => {
+            if (!state.isPaused) {
+              document.getElementById('gps-status').innerText = "GPS: Bez signálu";
+              document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 px-2.5 py-1 rounded-full";
+            }
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0, // Vynutí vždy čerstvá data ze satelitu, žádnou cache
+            timeout: 10000
+          }
+        );
+      }
+
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+
+      // AKCE SMĚNY
+      function startShift() {
+        state.active = true;
+        state.isPaused = false;
+        state.consumption = parseFloat(document.getElementById('input-consumption').value) || 6.5;
+        state.fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 38.5;
+        state.totalMoney = 0;
+        state.totalDistance = 0;
+        state.totalPeople = 0;
+        state.totalRides = 0;
+        state.currentRide = null;
+
+        document.getElementById('live-consumption').value = state.consumption;
+        document.getElementById('live-fuel-price').value = state.fuelPrice;
+
+        initGPS();
+        requestWakeLock();
+        saveState();
+        updateShiftUI();
+        showView('view-shift');
+      }
+
+      function togglePause() {
+        state.isPaused = !state.isPaused;
+
+        if (state.isPaused) {
+          if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+          releaseWakeLock();
+          document.getElementById('gps-status').innerText = "GPS: Pauza (Neaktivní)";
+          document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-500 text-white px-2.5 py-1 rounded-full";
+        } else {
+          initGPS();
+          requestWakeLock();
         }
 
-        function renderHistory() {
-            const listContainer = document.getElementById('history-list');
-            const history = JSON.parse(localStorage.getItem('vrbis_history')) || [];
+        saveState();
+        updateShiftUI();
+      }
 
-            if (history.length === 0) {
-                listContainer.innerHTML = `<p class="text-slate-400 dark:text-slate-500 text-center py-8">Zatím zde nejsou žádné uložené směny.</p>`;
-                return;
-            }
+      function updateShiftUI() {
+        document.getElementById('stat-money').innerText = `${state.totalMoney} Kč`;
+        document.getElementById('stat-km').innerText = `${state.totalDistance.toFixed(1)} km`;
+        document.getElementById('stat-rides').innerText = state.totalRides;
+        document.getElementById('stat-people').innerText = state.totalPeople;
 
-            listContainer.innerHTML = history.map((item, index) => `
+        const btnPause = document.getElementById('btn-pause');
+        const rideForm = document.getElementById('ride-form');
+        const liveParamsBox = document.getElementById('live-params-box');
+
+        if (state.isPaused) {
+          btnPause.className = "w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-full shadow-md transition-all text-sm flex items-center justify-center gap-2";
+          btnPause.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg> Obnovit směnu (Konec pauzy)`;
+          rideForm.classList.add('hidden');
+          liveParamsBox.classList.add('hidden');
+        } else {
+          btnPause.className = "w-full bg-slate-200 dark:bg-slate-900 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-full shadow-sm transition-all text-sm flex items-center justify-center gap-2";
+          btnPause.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg> Pozastavit směnu (Pauza)`;
+          if (!state.currentRide) {
+            rideForm.classList.remove('hidden');
+            liveParamsBox.classList.remove('hidden');
+          }
+        }
+
+        if (state.currentRide) {
+          rideForm.classList.add('hidden');
+          document.getElementById('ride-active').classList.remove('hidden');
+          document.getElementById('active-destination').innerText = state.currentRide.address;
+          btnPause.classList.add('hidden');
+        } else {
+          if (!state.isPaused) {
+            rideForm.classList.remove('hidden');
+          }
+          document.getElementById('ride-active').classList.add('hidden');
+          document.getElementById('ride-address').value = '';
+          document.getElementById('ride-price').value = '';
+          if (!state.isPaused) btnPause.classList.remove('hidden');
+        }
+      }
+
+      // JÍZDY
+      function startRide() {
+        if (state.isPaused) return;
+        const people = parseInt(document.getElementById('ride-people').value) || 1;
+        const price = parseFloat(document.getElementById('ride-price').value) || 0;
+        const address = document.getElementById('ride-address').value.trim();
+
+        if (!address) {
+          alert('Zadej adresu cíle.');
+          return;
+        }
+
+        state.currentRide = { people, price, address };
+        saveState();
+        updateShiftUI();
+
+        window.location.href = `https://mapy.cz/zakladni?q=${encodeURIComponent(address)}`;
+      }
+
+      function endRide() {
+        if (state.currentRide) {
+          state.totalMoney += state.currentRide.price;
+          state.totalPeople += state.currentRide.people;
+          state.totalRides += 1;
+          state.currentRide = null;
+          saveState();
+          updateShiftUI();
+        }
+      }
+
+      function finishShiftPrompt() {
+        if (state.currentRide && !confirm('Máš aktivní jízdu. Opravdu ukončit směnu?')) return;
+
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        releaseWakeLock();
+
+        document.getElementById('gps-status').innerText = "GPS: Neaktivní";
+        document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-900 dark:text-slate-400 px-2.5 py-1 rounded-full";
+
+        document.getElementById('final-km-input').value = state.totalDistance.toFixed(1);
+        recalculateSummary();
+        showView('view-summary');
+      }
+
+      function recalculateSummary() {
+        const finalKm = parseFloat(document.getElementById('final-km-input').value) || 0;
+        const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
+        const netProfit = state.totalMoney - fuelCost;
+
+        document.getElementById('sum-people').innerText = state.totalPeople;
+        document.getElementById('sum-rides').innerText = state.totalRides;
+        document.getElementById('sum-gross').innerText = `${state.totalMoney} Kč`;
+        document.getElementById('sum-fuel').innerText = `${Math.round(fuelCost)} Kč`;
+        document.getElementById('sum-net').innerText = `${Math.round(netProfit)} Kč`;
+      }
+
+      // UKLÁDÁNÍ DO HISTORIE A RESET
+      function commitShiftToHistoryAndReset() {
+        const finalKm = parseFloat(document.getElementById('final-km-input').value) || 0;
+        const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
+        const netProfit = state.totalMoney - fuelCost;
+
+        const historyItem = {
+          date: new Date().toLocaleDateString('cs-CZ'),
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          people: state.totalPeople,
+          rides: state.totalRides,
+          km: finalKm.toFixed(1),
+          gross: state.totalMoney,
+          fuel: Math.round(fuelCost),
+          net: Math.round(netProfit)
+        };
+
+        let history = JSON.parse(localStorage.getItem('vrbis_history')) || [];
+        history.unshift(historyItem);
+        localStorage.setItem('vrbis_history', JSON.stringify(history));
+
+        localStorage.removeItem('taxi_shift_state');
+        state.active = false;
+        state.isPaused = false;
+        showView('view-setup');
+      }
+
+      // LOGIKA BOČNÍHO MENU
+      function toggleSidebar(open) {
+        const sidebar = document.getElementById('history-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        if (open) {
+          renderHistory();
+          overlay.classList.remove('hidden');
+          setTimeout(() => {
+            overlay.classList.add('opacity-100');
+            sidebar.classList.remove('translate-x-full');
+          }, 10);
+        } else {
+          sidebar.classList.add('translate-x-full');
+          overlay.classList.remove('opacity-100');
+          setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+      }
+
+      function renderHistory() {
+        const listContainer = document.getElementById('history-list');
+        const history = JSON.parse(localStorage.getItem('vrbis_history')) || [];
+
+        if (history.length === 0) {
+          listContainer.innerHTML = `<p class="text-slate-400 dark:text-slate-500 text-center py-8">Zatím zde nejsou žádné uložené směny.</p>`;
+          return;
+        }
+
+        listContainer.innerHTML = history.map((item, index) => `
                 <div class="bg-slate-100 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                     <div class="flex justify-between font-bold border-b border-slate-200 dark:border-slate-800 pb-1 text-slate-500">
                         <span>${item.date} (${item.time})</span>
@@ -573,14 +619,15 @@
                     </div>
                 </div>
             `).join('');
-        }
+      }
 
-        function clearHistory() {
-            if (confirm('Opravdu chcete kompletně vymazat celou historii směn?')) {
-                localStorage.removeItem('vrbis_history');
-                renderHistory();
-            }
+      function clearHistory() {
+        if (confirm('Opravdu chcete kompletně vymazat celou historii směn?')) {
+          localStorage.removeItem('vrbis_history');
+          renderHistory();
         }
+      }
     </script>
 </body>
+
 </html>
