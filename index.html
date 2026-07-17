@@ -36,7 +36,6 @@
         <!-- TLAČÍTKO PRO HISTORII V ROŽKU -->
         <div class="absolute top-4 right-4 z-30">
             <button onclick="toggleSidebar(true)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center">
-                <!-- Ikona menu / listu -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-[#007bff]">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
                 </svg>
@@ -209,10 +208,12 @@
             totalRides: 0,
             currentRide: null,
             lastLat: null,
-            lastLon: null
+            lastLon: null,
+            lastTimestamp: null
         };
 
         let watchId = null;
+        let wakeLock = null;
 
         // Načtení stavu z localStorage při startu
         if (localStorage.getItem('taxi_shift_state')) {
@@ -223,8 +224,13 @@
             document.getElementById('live-fuel-price').value = state.fuelPrice;
             
             if (state.active) {
+                // Vyčištění mezipaměti polohy po tvrdém restartu/načtení, aby nevznikl obří skok z minula
+                state.lastLat = null;
+                state.lastLon = null;
+                state.lastTimestamp = null;
                 if (!state.isPaused) {
                     initGPS();
+                    requestWakeLock();
                 }
                 showView('view-shift');
                 updateShiftUI();
@@ -250,7 +256,31 @@
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        // GPS SLEDOVÁNÍ
+        // SCREEN WAKE LOCK (Zabrání zhasnutí displeje na iOS)
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.warn('Wake Lock nebyl schválen:', err);
+                }
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock) {
+                wakeLock.release().then(() => { wakeLock = null; });
+            }
+        }
+
+        // Opětovné vyžádání zámku obrazovky při návratu do Safari z pozadí
+        document.addEventListener('visibilitychange', async () => {
+            if (state.active && !state.isPaused && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        // GPS SLEDOVÁNÍ (Zpřesněná verze)
         function initGPS() {
             if (state.isPaused) return;
             if (!navigator.geolocation) {
@@ -261,6 +291,11 @@
             document.getElementById('gps-status').innerText = "GPS: Vyhledávám...";
             document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-2.5 py-1 rounded-full";
 
+            // Vyčistíme staré body před novým sledováním
+            state.lastLat = null;
+            state.lastLon = null;
+            state.lastTimestamp = null;
+
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     if (state.isPaused) return;
@@ -269,17 +304,42 @@
                     
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    const currentTimestamp = position.timestamp || Date.now();
 
-                    if (state.lastLat !== null && state.lastLon !== null) {
+                    if (state.lastLat !== null && state.lastLon !== null && state.lastTimestamp !== null) {
                         const dist = calculateDistance(state.lastLat, state.lastLon, lat, lon);
-                        if (dist > 0.02 && position.coords.accuracy < 30) {
+                        const timeDiffSeconds = (currentTimestamp - state.lastTimestamp) / 1000;
+                        
+                        // Výpočet reálné rychlosti mezi dvěma body v km/h
+                        const speedKmH = timeDiffSeconds > 0 ? (dist / (timeDiffSeconds / 3600)) : 0;
+
+                        // UPRAVENÝ FILTR:
+                        // 1. Musí jít o pohyb (více než 10 metrů)
+                        // 2. Přesnost musí být do 60 metrů (aby to nevypadávalo pod stromy)
+                        // 3. Rychlost nesmí překročit 160 km/h (ochrana proti GPS odskokům/glitchům)
+                        if (dist > 0.01 && accuracy < 60 && speedKmH < 160) {
                             state.totalDistance += dist;
+                            state.lastLat = lat;
+                            state.lastLon = lon;
+                            state.lastTimestamp = currentTimestamp;
                             updateShiftUI();
                             saveState();
+                        } else if (accuracy < 30) {
+                            // Pokud auto stojí, nebo došlo k divnému rychlostnímu skoku, ale přesnost je dobrá,
+                            // posuneme pouze záchytný bod bez přičítání km, aby se filtr resetoval.
+                            state.lastLat = lat;
+                            state.lastLon = lon;
+                            state.lastTimestamp = currentTimestamp;
+                            saveState();
                         }
+                    } else {
+                        // První záchytný bod směny / jízdy
+                        state.lastLat = lat;
+                        state.lastLon = lon;
+                        state.lastTimestamp = currentTimestamp;
+                        saveState();
                     }
-                    state.lastLat = lat;
-                    state.lastLon = lon;
                 },
                 (error) => {
                     if (!state.isPaused) {
@@ -287,7 +347,11 @@
                         document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 px-2.5 py-1 rounded-full";
                     }
                 },
-                { enableHighAccuracy: true }
+                { 
+                    enableHighAccuracy: true, 
+                    maximumAge: 0, // Vynutí vždy čerstvá data ze satelitu, žádnou cache
+                    timeout: 10000 
+                }
             );
         }
 
@@ -313,35 +377,31 @@
             state.totalPeople = 0;
             state.totalRides = 0;
             state.currentRide = null;
-            state.lastLat = null;
-            state.lastLon = null;
 
             document.getElementById('live-consumption').value = state.consumption;
             document.getElementById('live-fuel-price').value = state.fuelPrice;
 
             initGPS();
+            requestWakeLock();
             saveState();
             updateShiftUI();
             showView('view-shift');
         }
 
-        // FUNKCE PRO PAUZU
         function togglePause() {
             state.isPaused = !state.isPaused;
             
             if (state.isPaused) {
-                // Vypnout sledování polohy pro šetření baterie
                 if (watchId) {
                     navigator.geolocation.clearWatch(watchId);
                     watchId = null;
                 }
-                state.lastLat = null;
-                state.lastLon = null;
-                
+                releaseWakeLock();
                 document.getElementById('gps-status').innerText = "GPS: Pauza (Neaktivní)";
                 document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-amber-500 text-white px-2.5 py-1 rounded-full";
             } else {
                 initGPS();
+                requestWakeLock();
             }
             
             saveState();
@@ -354,7 +414,6 @@
             document.getElementById('stat-rides').innerText = state.totalRides;
             document.getElementById('stat-people').innerText = state.totalPeople;
 
-            // Úprava tlačítka pauzy podle stavu
             const btnPause = document.getElementById('btn-pause');
             const rideForm = document.getElementById('ride-form');
             const liveParamsBox = document.getElementById('live-params-box');
@@ -377,7 +436,7 @@
                 rideForm.classList.add('hidden');
                 document.getElementById('ride-active').classList.remove('hidden');
                 document.getElementById('active-destination').innerText = state.currentRide.address;
-                btnPause.classList.add('hidden'); // Během jízdy nelze dát pauzu
+                btnPause.classList.add('hidden');
             } else {
                 if (!state.isPaused) {
                     rideForm.classList.remove('hidden');
@@ -423,6 +482,8 @@
             if (state.currentRide && !confirm('Máš aktivní jízdu. Opravdu ukončit směnu?')) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            releaseWakeLock();
+            
             document.getElementById('gps-status').innerText = "GPS: Neaktivní";
             document.getElementById('gps-status').className = "text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-900 dark:text-slate-400 px-2.5 py-1 rounded-full";
 
@@ -449,7 +510,6 @@
             const fuelCost = (finalKm / 100) * state.consumption * state.fuelPrice;
             const netProfit = state.totalMoney - fuelCost;
 
-            // Vytvoření záznamu historie
             const historyItem = {
                 date: new Date().toLocaleDateString('cs-CZ'),
                 time: new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'}),
@@ -461,12 +521,10 @@
                 net: Math.round(netProfit)
             };
 
-            // Načtení stávající historie, přidání nové a uložení
             let history = JSON.parse(localStorage.getItem('vrbis_history')) || [];
-            history.unshift(historyItem); // Nové směny budou nahoře
+            history.unshift(historyItem);
             localStorage.setItem('vrbis_history', JSON.stringify(history));
 
-            // Smazání aktivního stavu a návrat na začátek
             localStorage.removeItem('taxi_shift_state');
             state.active = false;
             state.isPaused = false;
